@@ -27,7 +27,7 @@ import os
 import logging
 import unittest
 from decimal import Decimal
-from service.models import Product, Category, db
+from service.models import Product, DataValidationError, Category, db
 from service import app
 from tests.factories import ProductFactory
 
@@ -189,3 +189,23 @@ class TestProductModel(unittest.TestCase):
         self.assertEqual(found.count(), count)
         for product in found:
             self.assertEqual(product.category, category)
+
+    def test_update_without_id_raises(self):
+        """It should Raise DataValidationError when updating with no ID"""
+        product = ProductFactory()
+        product.id = None  # ensure missing ID
+        with self.assertRaises(DataValidationError):
+            product.update()
+
+    def test_deserialize_with_invalid_available_type(self):
+        """It should raise DataValidationError for invalid available type"""
+        product = ProductFactory()
+        data = {
+            "name": "Bad Product",
+            "description": "Bad",
+            "price": "10.00",
+            "available": "yes",   # WRONG TYPE
+            "category": "FOOD",
+        }
+        with self.assertRaises(DataValidationError):
+            product.deserialize(data)
